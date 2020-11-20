@@ -60,7 +60,7 @@ def prepare_inception_metrics(dataset, parallel, config):
             np.dot(sigma_fake, sigma_real), disp=False)  # pylint: disable=no-member
         dist = m + np.trace(sigma_fake + sigma_real - 2*s)
         FID = np.real(dist)
-        return IS_mean, IS_std, FID, sigma_fake
+        return IS_mean, IS_std, FID, sigma_fake, pool
     return get_inception_metrics, sigma_real
 
 
