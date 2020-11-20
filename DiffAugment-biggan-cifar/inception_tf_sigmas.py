@@ -73,6 +73,7 @@ def accumulate_inception_activations(sample, inception_v3_features, inception_v3
     os.makedirs(fake_dir, exist_ok=True)
     print('\nSaving images at %s' % fake_dir)
     while cnt < num_inception_images:
+        utils.seed_rng(cnt)
         images, _ = sample()
         images = ((images.permute(0,2,3,1).cpu().numpy() * 0.5 + 0.5)
                   * 255 + 0.5).astype(np.uint8)
