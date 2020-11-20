@@ -17,6 +17,7 @@ import glob
 import uuid
 from typing import Any, List, Tuple, Union
 import torch
+from imageio import imsave
 
 import dnnlib
 import dnnlib.tflib
@@ -67,10 +68,20 @@ def accumulate_inception_activations(sample, inception_v3_features, inception_v3
     pool, logits = [], []
     cnt = 0
     num_gpus = torch.cuda.device_count()
+    # Create directorty for fake images
+    fake_dir = os.path.join(data_path, 'fake_dir')
+    os.makedirs(fake_dir, exist_ok=True)
+    print('\nSaving images at %s' % fake_dir)
     while cnt < num_inception_images:
         images, _ = sample()
         images = ((images.cpu().numpy() * 0.5 + 0.5)
                   * 255 + 0.5).astype(np.uint8)
+        # Save batch of images
+        for img_idx, img in enumerate(images):
+            file_idx = 'fake_image_{:05d}.png'.format(cnt+img_idx)
+            file_name = os.path.join(fake_dir, file_idx)
+            imsave(file_name, img)
+        images = np.transpose(images, (0,3,1,2))
         pool.append(inception_v3_features.run(images,
                                               num_gpus=num_gpus, assume_frozen=True))
         logits.append(inception_v3_softmax.run(images,
@@ -82,7 +93,7 @@ def accumulate_inception_activations(sample, inception_v3_features, inception_v3
 def calculate_inception_score(pred, num_splits=10):
     scores = []
     for index in range(num_splits):
-        pred_chunk = pred[index * (pred.shape[0] // num_splits)                          : (index + 1) * (pred.shape[0] // num_splits), :]
+        pred_chunk = pred[index * (pred.shape[0] // num_splits) : (index + 1) * (pred.shape[0] // num_splits), :]
         kl_inception = pred_chunk * \
             (np.log(pred_chunk) - np.log(np.expand_dims(np.mean(pred_chunk, 0), 0)))
         kl_inception = np.mean(np.sum(kl_inception, 1))
