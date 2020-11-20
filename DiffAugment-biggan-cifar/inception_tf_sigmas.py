@@ -31,24 +31,22 @@ def prepare_inception_metrics(dataset, parallel, config):
         'http://d36zk2xti64re0.cloudfront.net/stylegan1/networks/metrics/inception_v3_features.pkl')
     inception_v3_softmax = dnnlib.util.load_pkl(
         'http://d36zk2xti64re0.cloudfront.net/stylegan1/networks/metrics/inception_v3_softmax.pkl')
-    try:
-        mu_real, sigma_real = dnnlib.util.load_pkl(dataset + '_inception_moments.pkl')
-    except:
-        print('Calculating inception features for the training set...')
-        loader = utils.get_data_loaders(
-            **{**config, 'train': False, 'mirror_augment': False,
-            'use_multiepoch_sampler': False, 'load_in_mem': False, 'pin_memory': False})[0]
-        pool = []
-        num_gpus = torch.cuda.device_count()
-        for images, _ in loader:
-            images = ((images.numpy() * 0.5 + 0.5)
-                      * 255 + 0.5).astype(np.uint8)
-            pool.append(inception_v3_features.run(images,
-                                                  num_gpus=num_gpus, assume_frozen=True))
-        pool = np.concatenate(pool)
-        mu_real, sigma_real = np.mean(pool, axis=0), np.cov(pool, rowvar=False)
-        dnnlib.util.save_pkl((mu_real, sigma_real), dataset + '_inception_moments.pkl')
-        mu_real, sigma_real = dnnlib.util.load_pkl(dataset + '_inception_moments.pkl')
+    
+    print('Calculating inception features for the training set...')
+    loader = utils.get_data_loaders(
+        **{**config, 'train': False, 'mirror_augment': False,
+        'use_multiepoch_sampler': False, 'load_in_mem': False, 'pin_memory': False})[0]
+    pool = []
+    num_gpus = torch.cuda.device_count()
+    for images, _ in loader:
+        images = ((images.numpy() * 0.5 + 0.5)
+                  * 255 + 0.5).astype(np.uint8)
+        pool.append(inception_v3_features.run(images,
+                                              num_gpus=num_gpus, assume_frozen=True))
+    pool = np.concatenate(pool)
+    mu_real, sigma_real = np.mean(pool, axis=0), np.cov(pool, rowvar=False)
+    dnnlib.util.save_pkl((mu_real, sigma_real), dataset + '_inception_moments.pkl')
+    mu_real, sigma_real = dnnlib.util.load_pkl(dataset + '_inception_moments.pkl')
 
     def get_inception_metrics(sample, num_inception_images, folder_fake, num_splits=10, prints=True, use_torch=True):
         pool, logits = accumulate_inception_activations(
@@ -61,7 +59,7 @@ def prepare_inception_metrics(dataset, parallel, config):
         dist = m + np.trace(sigma_fake + sigma_real - 2*s)
         FID = np.real(dist)
         return IS_mean, IS_std, FID, sigma_fake, pool
-    return get_inception_metrics, sigma_real
+    return get_inception_metrics, sigma_real, pool
 
 
 def accumulate_inception_activations(sample, inception_v3_features, inception_v3_softmax, num_inception_images, folder_fake):
