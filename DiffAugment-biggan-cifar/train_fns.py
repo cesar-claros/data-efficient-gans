@@ -239,7 +239,7 @@ def test(G, D, GD, G_ema, z_, y_, state_dict, config, sample, get_inception_metr
                  **{k: v / acc_itrs for k, v in acc_metrics.items()})
     
     
-def eval(G, D, GD, G_ema, z_, y_, state_dict, config, sample, get_inception_metrics):
+def eval(G, D, GD, G_ema, z_, y_, state_dict, config, sample, get_inception_metrics, experiment_name):
     print('Calculating validation accuracy...')
     D.eval()
     D_accuracy = []
