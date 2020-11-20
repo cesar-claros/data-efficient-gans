@@ -269,8 +269,16 @@ def eval(G, D, GD, G_ema, z_, y_, state_dict, config, sample, get_inception_metr
         utils.accumulate_standing_stats(G_ema if config['ema'] and config['use_ema'] else G,
                                         z_, y_, config['n_classes'],
                                         config['num_standing_accumulations'])
+    
+    if not os.path.isdir('%s/%s' % (config['samples_root'], experiment_name)):
+        os.mkdir('%s/%s' % (config['samples_root'], experiment_name))
+  
+    folder_fake = '%s/%s/%d' % (config['samples_root'], experiment_name,
+                                                    state_dict['itr'])
+    os.mkdir(folder_fake)
     IS_mean, IS_std, FID, sigma_fake = get_inception_metrics(sample,
                                                  config['num_inception_images'],
+                                                 folder_fake,
                                                  num_splits=10)
     print('Itr %d: PYTORCH UNOFFICIAL Inception Score is %3.3f +/- %3.3f, PYTORCH UNOFFICIAL FID is %5.4f' %
           (state_dict['itr'], IS_mean, IS_std, FID))
