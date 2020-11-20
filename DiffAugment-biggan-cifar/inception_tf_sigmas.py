@@ -43,6 +43,7 @@ def prepare_inception_metrics(dataset, parallel, config):
                   * 255 + 0.5).astype(np.uint8)
         pool.append(inception_v3_features.run(images,
                                               num_gpus=num_gpus, assume_frozen=True))
+    print(images.shape)
     pool = np.concatenate(pool)
     mu_real, sigma_real = np.mean(pool, axis=0), np.cov(pool, rowvar=False)
     dnnlib.util.save_pkl((mu_real, sigma_real), dataset + '_inception_moments.pkl')
