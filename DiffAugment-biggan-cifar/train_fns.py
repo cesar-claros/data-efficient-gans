@@ -237,3 +237,41 @@ def test(G, D, GD, G_ema, z_, y_, state_dict, config, sample, get_inception_metr
     test_log.log(itr=int(state_dict['itr']), IS_mean=float(IS_mean),
                  IS_std=float(IS_std), FID=float(FID), D_acc_val=D_acc_val, D_acc_train=D_acc_train,
                  **{k: v / acc_itrs for k, v in acc_metrics.items()})
+    
+    
+def eval(G, D, GD, G_ema, z_, y_, state_dict, config, sample, get_inception_metrics):
+    print('Calculating validation accuracy...')
+    D.eval()
+    D_accuracy = []
+    loader = utils.get_data_loaders(
+        **{**config, 'train': False, 'use_multiepoch_sampler': False, 'load_in_mem': False})[0]
+    with torch.no_grad():
+        for x, y in loader:
+            D_real = GD(None, None, x=x, dy=y, policy=config['DiffAugment'])
+            D_accuracy.append((D_real > 0).float().mean().item())
+    D.train()
+    D_acc_val = np.mean(D_accuracy)
+
+    print('Calculating training accuracy...')
+    D.eval()
+    D_accuracy = []
+    loader = utils.get_data_loaders(
+        **{**config, 'train': True, 'use_multiepoch_sampler': False, 'load_in_mem': False})[0]
+    with torch.no_grad():
+        for x, y in loader:
+            D_real = GD(None, None, x=x, dy=y, policy=config['DiffAugment'])
+            D_accuracy.append((D_real > 0).float().mean().item())
+    D.train()
+    D_acc_train = np.mean(D_accuracy)
+
+    print('Gathering inception metrics...')
+    if config['accumulate_stats']:
+        utils.accumulate_standing_stats(G_ema if config['ema'] and config['use_ema'] else G,
+                                        z_, y_, config['n_classes'],
+                                        config['num_standing_accumulations'])
+    IS_mean, IS_std, FID, sigma_fake = get_inception_metrics(sample,
+                                                 config['num_inception_images'],
+                                                 num_splits=10)
+    print('Itr %d: PYTORCH UNOFFICIAL Inception Score is %3.3f +/- %3.3f, PYTORCH UNOFFICIAL FID is %5.4f' %
+          (state_dict['itr'], IS_mean, IS_std, FID))
+    return IS_mean, IS_std, FID, sigma_fake 
