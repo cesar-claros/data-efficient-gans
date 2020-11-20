@@ -74,9 +74,8 @@ def accumulate_inception_activations(sample, inception_v3_features, inception_v3
     print('\nSaving images at %s' % fake_dir)
     while cnt < num_inception_images:
         images, _ = sample()
-        images = ((images.cpu().numpy() * 0.5 + 0.5)
+        images = ((images.permute(0,2,3,1).cpu().numpy() * 0.5 + 0.5)
                   * 255 + 0.5).astype(np.uint8)
-        # Save batch of images
         for img_idx, img in enumerate(images):
             file_idx = 'fake_image_{:05d}.png'.format(cnt+img_idx)
             file_name = os.path.join(fake_dir, file_idx)
