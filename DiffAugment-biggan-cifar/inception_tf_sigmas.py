@@ -50,9 +50,9 @@ def prepare_inception_metrics(dataset, parallel, config):
         dnnlib.util.save_pkl((mu_real, sigma_real), dataset + '_inception_moments.pkl')
         mu_real, sigma_real = dnnlib.util.load_pkl(dataset + '_inception_moments.pkl')
 
-    def get_inception_metrics(sample, num_inception_images, num_splits=10, prints=True, use_torch=True):
+    def get_inception_metrics(sample, num_inception_images, folder_fake, num_splits=10, prints=True, use_torch=True):
         pool, logits = accumulate_inception_activations(
-            sample, inception_v3_features, inception_v3_softmax, num_inception_images)
+            sample, inception_v3_features, inception_v3_softmax, num_inception_images, folder_fake)
         IS_mean, IS_std = calculate_inception_score(logits, num_splits)
         mu_fake, sigma_fake = np.mean(pool, axis=0), np.cov(pool, rowvar=False)
         m = np.square(mu_fake - mu_real).sum()
@@ -64,12 +64,12 @@ def prepare_inception_metrics(dataset, parallel, config):
     return get_inception_metrics, sigma_real
 
 
-def accumulate_inception_activations(sample, inception_v3_features, inception_v3_softmax, num_inception_images):
+def accumulate_inception_activations(sample, inception_v3_features, inception_v3_softmax, num_inception_images, folder_fake):
     pool, logits = [], []
     cnt = 0
     num_gpus = torch.cuda.device_count()
     # Create directorty for fake images
-    fake_dir = os.path.join(data_path, 'fake_dir')
+    fake_dir = os.path.join(folder_fake, 'fake_images')
     os.makedirs(fake_dir, exist_ok=True)
     print('\nSaving images at %s' % fake_dir)
     while cnt < num_inception_images:
