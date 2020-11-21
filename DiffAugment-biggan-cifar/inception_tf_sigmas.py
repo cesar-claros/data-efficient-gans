@@ -37,8 +37,9 @@ def prepare_inception_metrics(dataset, parallel, config):
         **{**config, 'train': False, 'mirror_augment': False,
         'use_multiepoch_sampler': False, 'load_in_mem': False, 'pin_memory': False})[0]
     pool = []
+    cnt = 0
     num_gpus = torch.cuda.device_count()
-    # Create directorty for fake images
+    # Create directorty for training images
     folder = '%s/%s' % (config['samples_root'], config['experiment_name'])
     training_dir = os.path.join(folder, 'training_images')
     os.makedirs(training_dir, exist_ok=True)
