@@ -271,11 +271,11 @@ def eval(G, D, GD, G_ema, z_, y_, state_dict, config, sample, get_inception_metr
                                         config['num_standing_accumulations'])
     
     if not os.path.isdir('%s/%s' % (config['samples_root'], experiment_name)):
-        os.mkdir('%s/%s' % (config['samples_root'], experiment_name), exist_ok=True)
+        os.makedirs('%s/%s' % (config['samples_root'], experiment_name), exist_ok=True)
   
     folder_fake = '%s/%s/%d' % (config['samples_root'], experiment_name,
                                                     state_dict['itr'])
-    os.mkdir(folder_fake, exist_ok=True)
+    os.makedirs(folder_fake, exist_ok=True)
     IS_mean, IS_std, FID, sigma_fake, pool = get_inception_metrics(sample,
                                                  config['num_inception_images'],
                                                  folder_fake,
