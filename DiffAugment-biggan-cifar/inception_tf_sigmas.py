@@ -38,12 +38,23 @@ def prepare_inception_metrics(dataset, parallel, config):
         'use_multiepoch_sampler': False, 'load_in_mem': False, 'pin_memory': False})[0]
     pool = []
     num_gpus = torch.cuda.device_count()
+    # Create directorty for fake images
+    folder = '%s/%s' % (config['samples_root'], config['experiment_name'])
+    training_dir = os.path.join(folder, 'training_images')
+    os.makedirs(training_dir, exist_ok=True)
+    print('Saving training images at %s' % training_dir)
     for images, _ in loader:
-        images = ((images.numpy() * 0.5 + 0.5)
+        images = ((images.permute(0,2,3,1).cpu().numpy() * 0.5 + 0.5)
                   * 255 + 0.5).astype(np.uint8)
+        for img_idx, img in enumerate(images):
+            file_idx = 'fake_image_{:05d}.png'.format(cnt+img_idx)
+            file_name = os.path.join(training_dir, file_idx)
+            imsave(file_name, img)
+        images = np.transpose(images, (0,3,1,2))
         pool.append(inception_v3_features.run(images,
                                               num_gpus=num_gpus, assume_frozen=True))
-    print(images.shape)
+        cnt += images.shape[0]
+        
     pool = np.concatenate(pool)
     mu_real, sigma_real = np.mean(pool, axis=0), np.cov(pool, rowvar=False)
     dnnlib.util.save_pkl((mu_real, sigma_real), dataset + '_inception_moments.pkl')
@@ -70,7 +81,7 @@ def accumulate_inception_activations(sample, inception_v3_features, inception_v3
     # Create directorty for fake images
     fake_dir = os.path.join(folder_fake, 'fake_images')
     os.makedirs(fake_dir, exist_ok=True)
-    print('\nSaving images at %s' % fake_dir)
+    print('Saving fake images at %s' % fake_dir)
     while cnt < num_inception_images:
         utils.seed_rng(cnt)
         images, _ = sample()
