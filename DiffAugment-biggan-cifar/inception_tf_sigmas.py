@@ -48,7 +48,7 @@ def prepare_inception_metrics(dataset, parallel, config):
         images = ((images.permute(0,2,3,1).cpu().numpy() * 0.5 + 0.5)
                   * 255 + 0.5).astype(np.uint8)
         for img_idx, img in enumerate(images):
-            file_idx = 'fake_image_{:05d}.png'.format(cnt+img_idx)
+            file_idx = 'train_image_{:05d}.png'.format(cnt+img_idx)
             file_name = os.path.join(training_dir, file_idx)
             imsave(file_name, img)
         images = np.transpose(images, (0,3,1,2))
